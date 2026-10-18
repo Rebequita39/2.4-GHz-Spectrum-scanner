@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+<meta charset="utf-8">
+<title>2.4 GHz Spectrum Scan</title>
+</head>
+<body>
+    <div class="page-wrapper">
+<header>2.4 GHz Spectrum Scan</header>
+
+<p id="info">Waiting for data...</p>
+
+<div class="container">
+<div class="window" style="width: 1100px;">
+    <div class="title-bar">
+      Activity
+      <div class="btn">×</div>
+    </div>
+    <div class="window-content">
+      <canvas id="c" width="1100" height="400"></canvas>
+    </div>
+  </div>
+
+
+
+</div>
+<script>
+const N = 126, cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const W = cv.width, H = cv.height, PAD = 30;
+let peak = new Array(N).fill(0);
+
+function draw(vals) {
+  ctx.clearRect(0, 0, W, H);
+  const bw = (W - PAD) / N, ph = H - PAD;
+
+  // grid + Wi-Fi channel markers (Wi-Fi ch n -> NRF ch 5n+7)
+  ctx.font = "11px sans-serif"; ctx.textAlign = "center";
+  for (const w of [1, 6, 11, 13]) {
+    const x = PAD + (5 * w + 7 + 0.5) * bw;
+    ctx.strokeStyle = "#444"; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ph); ctx.stroke();
+    ctx.fillStyle = "#888"; ctx.fillText("WiFi " + w, x, 12);
+  }
+  ctx.setLineDash([]);
+
+  for (let i = 0; i < N; i++) {
+    peak[i] = Math.max(vals[i], peak[i] - 0.5);   // slow-decay peak hold
+    const x = PAD + i * bw;
+    const h = vals[i] / 100 * ph, p = peak[i] / 100 * ph;
+    ctx.fillStyle = "#9b09ae";
+    ctx.fillRect(x, ph - h, bw - 1, h);
+    ctx.fillStyle = "#D993D9";
+    ctx.fillRect(x, ph - p, bw - 1, 2);
+  }
+
+  // x axis labels (channel / MHz)
+  ctx.fillStyle = "#aaa";
+  for (let i = 0; i < N; i += 10) {
+    ctx.fillText(i + " / " + (2400 + i), PAD + (i + 0.5) * bw, H - 10);
+  }
+  // y axis
+  ctx.textAlign = "right";
+  for (const v of [0, 50, 100]) ctx.fillText(v + "%", PAD - 4, ph - v / 100 * ph + 4);
+}
+
+const es = new EventSource("/stream");
+es.onmessage = e => {
+  const vals = JSON.parse(e.data);
+  draw(vals);
+  const max = Math.max(...vals);
+  document.getElementById("info").textContent =
+    "Busiest channel: " + vals.indexOf(max) + " (" + (2400 + vals.indexOf(max)) + " MHz), " + max + "%";
+};
+es.onerror = () => document.getElementById("info").textContent = "Connection lost...";
+</script>
+
+</body>
+</html>

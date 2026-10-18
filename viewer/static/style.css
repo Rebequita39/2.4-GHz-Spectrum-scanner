@@ -1,0 +1,66 @@
+@font-face {
+  font-family: 'PixelFont';
+  src: url('fonts/zpix.ttf') format('truetype');
+}
+    body {
+      margin: 0;
+      background-color: #171717;
+      color: #9b09ae;
+      font-size: 1.5rem; 
+      font-family: 'PixelFont', sans-serif;
+      }
+    
+
+   header {
+  text-align: center;
+  padding: 20px 5px;
+  background-size: cover;
+  background-position: center;
+  color: #9b09ae;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+
+.title-bar {
+  background: #410645;
+  color: #D993D9;
+  font-weight: bold;
+  font-size: 16px;
+  padding: 2px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+
+  border-bottom: 2px solid #4b0d58;
+  box-shadow:
+    inset -2px -2px 0 #140213,
+    inset 2px 2px 0 #bd08ff;
+}
+
+.btn {
+  width: 14px;
+  height: 14px;
+  border: 1px solid #000;
+  background: #480d0d;
+  font-size: 10px;
+  line-height: 12px;
+  text-align: center;
+  cursor: pointer;
+
+  box-shadow:
+    inset -1px -1px 0 #000000,
+    inset 1px 1px 0 #ff0000;
+}
+
+.window-content {
+  flex: 1;                   
+  
+  font-size: 14px;
+  color: #ffffff;
+  white-space: normal;      
+  word-wrap: break-word;     
+  overflow-wrap: break-word; 
+  border-top: none;          
+  border: 1px solid #000;
+}
