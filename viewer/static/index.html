@@ -6,25 +6,39 @@
 <title>2.4 GHz Spectrum Scan</title>
 </head>
 <body>
-    <div class="page-wrapper">
-<header>2.4 GHz Spectrum Scan</header>
+  <div class="page-wrapper">
+    <header>2.4 GHz Spectrum Scan Output</header>
 
-<p id="info">Waiting for data...</p>
+   
+    
+    <div class="container">
 
-<div class="container">
-<div class="window" style="width: 1100px;">
-    <div class="title-bar">
-      Activity
-      <div class="btn">×</div>
+      
+    <div class="window" style="width: 350px;">
+        <div class="title-bar">
+          Info
+          <div class="btn">×</div>
+        </div>
+        <div class="window-content">
+           <p id="info">Waiting for data...</p>
     </div>
-    <div class="window-content">
-      <canvas id="c" width="1100" height="400"></canvas>
+
+
     </div>
+
+      <div class="window" style="width: 1140px;">
+        <div class="title-bar">
+          Activity
+          <div class="btn">×</div>
+        </div>
+        <div class="window-content">
+          <canvas id="c" width="1100" height="400"></canvas>
+      </div>
+    </div>
+
+
+
   </div>
-
-
-
-</div>
 <script>
 const N = 126, cv = document.getElementById("c"), ctx = cv.getContext("2d");
 const W = cv.width, H = cv.height, PAD = 30;
@@ -50,7 +64,7 @@ function draw(vals) {
     const h = vals[i] / 100 * ph, p = peak[i] / 100 * ph;
     ctx.fillStyle = "#9b09ae";
     ctx.fillRect(x, ph - h, bw - 1, h);
-    ctx.fillStyle = "#D993D9";
+    ctx.fillStyle = "#2b1d30";
     ctx.fillRect(x, ph - p, bw - 1, 2);
   }
 
