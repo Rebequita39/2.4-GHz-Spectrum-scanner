@@ -1,54 +1,93 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="style.css">
 <meta charset="utf-8">
+<link rel="stylesheet" href="style.css">
 <title>2.4 GHz Spectrum Scan</title>
 </head>
 <body>
-  <div class="page-wrapper">
-    <header>2.4 GHz Spectrum Scan Output</header>
+<div class="page-wrapper">
+  <header>2.4 GHz Spectrum Scan Output</header>
 
-   
-    
-    <div class="container">
+  <div class="container">
 
-      
-    <div class="window" style="width: 350px;">
+    <div class="column">
+
+      <!-- CONNECTION: server + ESP only -->
+      <div class="window" style="width: 350px;">
         <div class="title-bar">
-          Info
-          <div class="btn">×</div>
+          Connection
         </div>
-        <div class="window-content">
-           <p id="info">Waiting for data...</p>
+        <div class="window-content" style="text-align: left;">
+          <div id="conn">
+            <div class="row">Server: <b id="cn-server">--</b></div>
+            <div class="row">Browser stream: <b id="cn-stream">--</b></div>
+            <div class="row">Serial port: <b id="cn-port">--</b></div>
+            <div class="row">Baud: <b id="cn-baud">--</b></div>
+            <div class="row">ESP32 data: <b id="cn-esp">--</b></div>
+            <div class="row">NRF24 radio: <b id="cn-radio">--</b></div>
+            <div class="row">Sweep rate: <b id="cn-rate">--</b></div>
+            <div class="row">Last data: <b id="cn-age">--</b></div>
+            <div class="row">Sweeps received: <b id="cn-sweeps">--</b></div>
+            <div class="row">Bad lines: <b id="cn-bad">--</b></div>
+            <div class="row">Server uptime: <b id="cn-up">--</b></div>
+            <div class="row">ESP says: <b id="cn-msg">--</b></div>
+          </div>
+        </div>
+      </div>
+
+      <br>
+
+      <!-- LINK PLANNER -->
+      <div class="window" style="width: 350px;">
+        <div class="title-bar">
+          Link Planner
+        </div>
+        <div class="window-content" style="text-align: left;">
+          <aside id="planner">
+            <p id="pl-status">Learning the band...</p>
+            <div class="row">Best channel: <b id="pl-best">--</b></div>
+            <div class="row">Frequency: <b id="pl-freq">--</b></div>
+            <div class="row">Collision risk: <b id="pl-risk">--</b></div>
+            <div class="row">Hop list: <b id="pl-hop">--</b></div>
+            <br>
+            <div class="row">Wi-Fi 1: <b id="pl-w1">--</b></div>
+            <div class="row">Wi-Fi 6: <b id="pl-w6">--</b></div>
+            <div class="row">Wi-Fi 11: <b id="pl-w11">--</b></div>
+            <div class="row">Band load: <b id="pl-load">--</b></div>
+            <br>
+            <code id="pl-code">radio.setChannel(--);</code>
+          </aside>
+        </div>
+      </div>
+
     </div>
 
-
-    </div>
-
+    <div class="column2">
       <div class="window" style="width: 1140px;">
         <div class="title-bar">
           Activity
-          <div class="btn">×</div>
         </div>
         <div class="window-content">
           <canvas id="c" width="1100" height="400"></canvas>
+          <p id="busiest">Busiest channel: --</p>
+        </div>
       </div>
     </div>
 
-
-
   </div>
+</div>
+
 <script>
 const N = 126, cv = document.getElementById("c"), ctx = cv.getContext("2d");
 const W = cv.width, H = cv.height, PAD = 30;
 let peak = new Array(N).fill(0);
+const $id = id => document.getElementById(id);
 
 function draw(vals) {
   ctx.clearRect(0, 0, W, H);
   const bw = (W - PAD) / N, ph = H - PAD;
 
-  // grid + Wi-Fi channel markers (Wi-Fi ch n -> NRF ch 5n+7)
   ctx.font = "11px sans-serif"; ctx.textAlign = "center";
   for (const w of [1, 6, 11, 13]) {
     const x = PAD + (5 * w + 7 + 0.5) * bw;
@@ -59,35 +98,74 @@ function draw(vals) {
   ctx.setLineDash([]);
 
   for (let i = 0; i < N; i++) {
-    peak[i] = Math.max(vals[i], peak[i] - 0.5);   // slow-decay peak hold
+    peak[i] = Math.max(vals[i], peak[i] - 0.5);
     const x = PAD + i * bw;
     const h = vals[i] / 100 * ph, p = peak[i] / 100 * ph;
     ctx.fillStyle = "#9b09ae";
     ctx.fillRect(x, ph - h, bw - 1, h);
-    ctx.fillStyle = "#2b1d30";
+    ctx.fillStyle = "#c77dff";
     ctx.fillRect(x, ph - p, bw - 1, 2);
   }
 
-  // x axis labels (channel / MHz)
   ctx.fillStyle = "#aaa";
   for (let i = 0; i < N; i += 10) {
     ctx.fillText(i + " / " + (2400 + i), PAD + (i + 0.5) * bw, H - 10);
   }
-  // y axis
   ctx.textAlign = "right";
   for (const v of [0, 50, 100]) ctx.fillText(v + "%", PAD - 4, ph - v / 100 * ph + 4);
 }
 
+// ---- live data stream ----
 const es = new EventSource("/stream");
+es.onopen = () => $id("cn-stream").textContent = "connected";
 es.onmessage = e => {
   const vals = JSON.parse(e.data);
   draw(vals);
-  const max = Math.max(...vals);
-  document.getElementById("info").textContent =
-    "Busiest channel: " + vals.indexOf(max) + " (" + (2400 + vals.indexOf(max)) + " MHz), " + max + "%";
+  if (typeof updatePlanner === "function") updatePlanner(vals);
+  const max = Math.max(...vals), i = vals.indexOf(max);
+  $id("busiest").textContent =
+    "Busiest channel: " + i + " (" + (2400 + i) + " MHz), " + max + "%";
 };
-es.onerror = () => document.getElementById("info").textContent = "Connection lost...";
-</script>
+es.onerror = () => $id("cn-stream").textContent = "lost, retrying...";
 
+// ---- server / ESP status (polled every second) ----
+function fmtUp(s) {
+  const m = Math.floor(s / 60), h = Math.floor(m / 60);
+  return h ? h + "h " + (m % 60) + "m" : m ? m + "m " + (s % 60) + "s" : s + "s";
+}
+function setState(id, text, ok) {
+  const el = $id(id);
+  el.textContent = text;
+  el.style.color = ok === true ? "#3fb950" : ok === false ? "#f85149" : "";
+}
+
+async function pollStatus() {
+  try {
+    const r = await fetch("/status", { cache: "no-store" });
+    const s = await r.json();
+    setState("cn-server", "online", true);
+    setState("cn-port", s.port + (s.serial_ok ? " (open)" : " (closed)"), s.serial_ok);
+    $id("cn-baud").textContent = s.baud;
+
+    const live = s.age !== null && s.age < 3;
+    setState("cn-esp", live ? "streaming" : s.age === null ? "no data yet" : "stalled", live);
+    setState("cn-radio",
+      s.radio_ok === true ? "OK" : s.radio_ok === false ? "NOT RESPONDING" : "unknown",
+      s.radio_ok === null ? null : s.radio_ok);
+    $id("cn-rate").textContent = s.rate + " sweeps/s";
+    $id("cn-age").textContent = s.age === null ? "--" : s.age.toFixed(1) + " s ago";
+    $id("cn-sweeps").textContent = s.sweeps;
+    $id("cn-bad").textContent = s.bad_lines;
+    $id("cn-up").textContent = fmtUp(s.uptime);
+    $id("cn-msg").textContent = s.error || s.last_msg || "--";
+  } catch (e) {
+    setState("cn-server", "OFFLINE", false);
+    setState("cn-esp", "unknown", null);
+  }
+}
+pollStatus();
+setInterval(pollStatus, 1000);
+</script>
+<script src="vals.js" defer></script>
 </body>
 </html>
