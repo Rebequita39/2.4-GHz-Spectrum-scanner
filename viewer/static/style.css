@@ -4,7 +4,7 @@
 }
     body {
       margin: 0;
-      background-color: #2b1d30;
+      background-color: #2e2d2f;
       color: #f4eaf5;
       font-size: 1.5rem; 
       font-family: 'PixelFont', sans-serif;
@@ -17,7 +17,7 @@
   background-size: cover;
   background-position: center;
   color: #f4eaf5;
-  background-color: #423148;
+  background-color: #7c00b1;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
@@ -29,7 +29,7 @@
     }
 
 .title-bar {
-  background: #410645;
+  background: #7c00b1;
   color: #f4eaf5;
   font-weight: bold;
   font-size: 16px;
